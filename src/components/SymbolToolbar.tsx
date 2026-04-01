@@ -1,13 +1,19 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface Props {
   onInsert: (snippet: string) => void;
 }
 
-type Tab = "math" | "symbol" | "env" | "pkg";
+type Tab = "math" | "symbol" | "env" | "pkg" | "custom";
 
 type Item = { label: string; snippet: string; title?: string };
+
+interface CustomSnippet {
+  id: string;
+  name: string;
+  snippet: string;
+}
 
 const MATH: Item[] = [
   { label: "\\frac",     snippet: "\\frac{}{}" },
@@ -36,7 +42,6 @@ const MATH: Item[] = [
 ];
 
 const SYMBOLS: Item[] = [
-  // Greek lower
   { label: "α", snippet: "\\alpha" },
   { label: "β", snippet: "\\beta" },
   { label: "γ", snippet: "\\gamma" },
@@ -57,7 +62,6 @@ const SYMBOLS: Item[] = [
   { label: "χ", snippet: "\\chi" },
   { label: "ψ", snippet: "\\psi" },
   { label: "ω", snippet: "\\omega" },
-  // Greek upper
   { label: "Γ", snippet: "\\Gamma" },
   { label: "Δ", snippet: "\\Delta" },
   { label: "Λ", snippet: "\\Lambda" },
@@ -66,17 +70,15 @@ const SYMBOLS: Item[] = [
   { label: "Π", snippet: "\\Pi" },
   { label: "Φ", snippet: "\\Phi" },
   { label: "Ψ", snippet: "\\Psi" },
-  // Arrows
-  { label: "→", snippet: "\\to",            title: "\\to" },
-  { label: "←", snippet: "\\leftarrow",     title: "\\leftarrow" },
-  { label: "⇒", snippet: "\\Rightarrow",    title: "\\Rightarrow" },
-  { label: "⇐", snippet: "\\Leftarrow",     title: "\\Leftarrow" },
-  { label: "⇔", snippet: "\\Leftrightarrow",title: "\\Leftrightarrow" },
-  { label: "↑", snippet: "\\uparrow",       title: "\\uparrow" },
-  { label: "↓", snippet: "\\downarrow",     title: "\\downarrow" },
-  { label: "↦", snippet: "\\mapsto",        title: "\\mapsto" },
-  { label: "↪", snippet: "\\hookrightarrow",title: "\\hookrightarrow" },
-  // Operators
+  { label: "→", snippet: "\\to",             title: "\\to" },
+  { label: "←", snippet: "\\leftarrow",      title: "\\leftarrow" },
+  { label: "⇒", snippet: "\\Rightarrow",     title: "\\Rightarrow" },
+  { label: "⇐", snippet: "\\Leftarrow",      title: "\\Leftarrow" },
+  { label: "⇔", snippet: "\\Leftrightarrow", title: "\\Leftrightarrow" },
+  { label: "↑", snippet: "\\uparrow",        title: "\\uparrow" },
+  { label: "↓", snippet: "\\downarrow",      title: "\\downarrow" },
+  { label: "↦", snippet: "\\mapsto",         title: "\\mapsto" },
+  { label: "↪", snippet: "\\hookrightarrow", title: "\\hookrightarrow" },
   { label: "≤", snippet: "\\leq" },
   { label: "≥", snippet: "\\geq" },
   { label: "≠", snippet: "\\neq" },
@@ -133,43 +135,83 @@ const ENVS: Item[] = [
 ];
 
 const PKGS: Item[] = [
-  { label: "amsmath",     snippet: "\\usepackage{amsmath}",                              title: "数式拡張" },
-  { label: "amssymb",     snippet: "\\usepackage{amssymb}",                              title: "数学記号" },
-  { label: "graphicx",    snippet: "\\usepackage{graphicx}",                             title: "画像挿入" },
-  { label: "hyperref",    snippet: "\\usepackage[hidelinks]{hyperref}",                  title: "ハイパーリンク" },
-  { label: "geometry",    snippet: "\\usepackage[margin=25mm]{geometry}",                title: "余白設定" },
-  { label: "listings",    snippet: "\\usepackage{listings}\n\\usepackage{xcolor}",        title: "ソースコード" },
-  { label: "tikz",        snippet: "\\usepackage{tikz}",                                 title: "図形描画" },
-  { label: "pgfplots",    snippet: "\\usepackage{pgfplots}\n\\pgfplotsset{compat=1.18}", title: "グラフ" },
-  { label: "booktabs",    snippet: "\\usepackage{booktabs}",                             title: "キレイな表" },
-  { label: "caption",     snippet: "\\usepackage[font=small]{caption}",                  title: "キャプション" },
-  { label: "subcaption",  snippet: "\\usepackage{subcaption}",                           title: "サブ図" },
-  { label: "siunitx",     snippet: "\\usepackage{siunitx}",                              title: "SI単位" },
-  { label: "mhchem",      snippet: "\\usepackage[version=4]{mhchem}",                    title: "化学式" },
-  { label: "algorithm2e", snippet: "\\usepackage[ruled,vlined]{algorithm2e}",            title: "アルゴリズム" },
-  { label: "biblatex",    snippet: "\\usepackage[backend=biber,style=numeric]{biblatex}\n\\addbibresource{refs.bib}", title: "参考文献" },
-  { label: "natbib",      snippet: "\\usepackage[numbers]{natbib}",                      title: "参考文献(natbib)" },
-  { label: "tcolorbox",   snippet: "\\usepackage{tcolorbox}",                            title: "カラーボックス" },
-  { label: "cleveref",    snippet: "\\usepackage{cleveref}",                             title: "賢い参照" },
-  { label: "microtype",   snippet: "\\usepackage{microtype}",                            title: "タイポグラフィ改善" },
-  { label: "luatexja-preset", snippet: "\\usepackage[noto]{luatexja-preset}",           title: "日本語フォントプリセット" },
+  { label: "amsmath",       snippet: "\\usepackage{amsmath}",                              title: "数式拡張" },
+  { label: "amssymb",       snippet: "\\usepackage{amssymb}",                              title: "数学記号" },
+  { label: "graphicx",      snippet: "\\usepackage{graphicx}",                             title: "画像挿入" },
+  { label: "hyperref",      snippet: "\\usepackage[hidelinks]{hyperref}",                  title: "ハイパーリンク" },
+  { label: "geometry",      snippet: "\\usepackage[margin=25mm]{geometry}",                title: "余白設定" },
+  { label: "listings",      snippet: "\\usepackage{listings}\n\\usepackage{xcolor}",       title: "ソースコード" },
+  { label: "tikz",          snippet: "\\usepackage{tikz}",                                 title: "図形描画" },
+  { label: "pgfplots",      snippet: "\\usepackage{pgfplots}\n\\pgfplotsset{compat=1.18}", title: "グラフ" },
+  { label: "booktabs",      snippet: "\\usepackage{booktabs}",                             title: "キレイな表" },
+  { label: "caption",       snippet: "\\usepackage[font=small]{caption}",                  title: "キャプション" },
+  { label: "subcaption",    snippet: "\\usepackage{subcaption}",                           title: "サブ図" },
+  { label: "siunitx",       snippet: "\\usepackage{siunitx}",                              title: "SI単位" },
+  { label: "mhchem",        snippet: "\\usepackage[version=4]{mhchem}",                    title: "化学式" },
+  { label: "algorithm2e",   snippet: "\\usepackage[ruled,vlined]{algorithm2e}",            title: "アルゴリズム" },
+  { label: "biblatex",      snippet: "\\usepackage[backend=biber,style=numeric]{biblatex}\n\\addbibresource{refs.bib}", title: "参考文献" },
+  { label: "natbib",        snippet: "\\usepackage[numbers]{natbib}",                      title: "参考文献(natbib)" },
+  { label: "tcolorbox",     snippet: "\\usepackage{tcolorbox}",                            title: "カラーボックス" },
+  { label: "cleveref",      snippet: "\\usepackage{cleveref}",                             title: "賢い参照" },
+  { label: "microtype",     snippet: "\\usepackage{microtype}",                            title: "タイポグラフィ改善" },
+  { label: "luatexja-preset", snippet: "\\usepackage[noto]{luatexja-preset}",             title: "日本語フォントプリセット" },
 ];
 
-const TABS: { id: Tab; label: string; items: Item[] }[] = [
-  { id: "math",   label: "数式",       items: MATH },
-  { id: "symbol", label: "記号",       items: SYMBOLS },
-  { id: "env",    label: "環境・コマンド", items: ENVS },
-  { id: "pkg",    label: "パッケージ", items: PKGS },
-];
+const CUSTOM_KEY = "texmate_custom_snippets";
+
+function loadCustomSnippets(): CustomSnippet[] {
+  try {
+    return JSON.parse(localStorage.getItem(CUSTOM_KEY) ?? "[]");
+  } catch { return []; }
+}
+function saveCustomSnippets(s: CustomSnippet[]) {
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(s));
+}
 
 export default function SymbolToolbar({ onInsert }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>("math");
   const [open, setOpen] = useState(true);
+  const [customSnippets, setCustomSnippets] = useState<CustomSnippet[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newSnippet, setNewSnippet] = useState("");
 
-  const items = TABS.find((t) => t.id === activeTab)?.items ?? [];
+  useEffect(() => {
+    setCustomSnippets(loadCustomSnippets());
+  }, []);
+
+  function addCustomSnippet() {
+    if (!newName.trim() || !newSnippet.trim()) return;
+    const updated = [...customSnippets, { id: Date.now().toString(), name: newName.trim(), snippet: newSnippet.trim() }];
+    setCustomSnippets(updated);
+    saveCustomSnippets(updated);
+    setNewName("");
+    setNewSnippet("");
+    setShowAddForm(false);
+  }
+
+  function deleteCustomSnippet(id: string) {
+    const updated = customSnippets.filter((s) => s.id !== id);
+    setCustomSnippets(updated);
+    saveCustomSnippets(updated);
+  }
+
+  const TABS: { id: Tab; label: string }[] = [
+    { id: "math",   label: "数式" },
+    { id: "symbol", label: "記号" },
+    { id: "env",    label: "環境・コマンド" },
+    { id: "pkg",    label: "パッケージ" },
+    { id: "custom", label: `カスタム${customSnippets.length > 0 ? ` (${customSnippets.length})` : ""}` },
+  ];
+
+  const ITEMS_MAP: Record<string, Item[]> = {
+    math: MATH, symbol: SYMBOLS, env: ENVS, pkg: PKGS,
+    custom: customSnippets.map((s) => ({ label: s.name, snippet: s.snippet })),
+  };
+  const items = ITEMS_MAP[activeTab] ?? [];
 
   return (
-    <div className="shrink-0 border-b border-gray-700 bg-gray-850 bg-gray-800">
+    <div className="shrink-0 border-b border-gray-700 bg-gray-800">
       {/* Tab bar */}
       <div className="flex items-center border-b border-gray-700">
         {TABS.map((t) => (
@@ -196,16 +238,73 @@ export default function SymbolToolbar({ onInsert }: Props) {
       {/* Button grid */}
       {open && (
         <div className="h-16 overflow-y-auto flex flex-wrap gap-1 p-2">
-          {items.map((item, i) => (
-            <button
-              key={i}
-              onClick={() => onInsert(item.snippet)}
-              title={item.title ?? item.snippet}
-              className="text-xs bg-gray-700 hover:bg-gray-600 border border-gray-600 px-1.5 py-0.5 rounded font-mono text-gray-200 cursor-pointer whitespace-nowrap"
-            >
-              {item.label}
-            </button>
-          ))}
+          {activeTab === "custom" ? (
+            <>
+              {items.map((item, i) => (
+                <div key={i} className="flex items-center gap-0.5">
+                  <button
+                    onClick={() => onInsert(item.snippet)}
+                    title={item.snippet}
+                    className="text-xs bg-indigo-700 hover:bg-indigo-600 border border-indigo-600 px-1.5 py-0.5 rounded font-mono text-gray-200 cursor-pointer whitespace-nowrap"
+                  >
+                    {item.label}
+                  </button>
+                  <button
+                    onClick={() => {
+                      const s = customSnippets[i];
+                      if (s) deleteCustomSnippet(s.id);
+                    }}
+                    className="text-red-500 hover:text-red-400 text-xs px-0.5"
+                    title="削除"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+              {showAddForm ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="名前"
+                    className="text-xs bg-gray-700 border border-gray-600 rounded px-1 py-0.5 w-20 text-white focus:outline-none"
+                  />
+                  <input
+                    value={newSnippet}
+                    onChange={(e) => setNewSnippet(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addCustomSnippet()}
+                    placeholder="LaTeXコード"
+                    className="text-xs bg-gray-700 border border-gray-600 rounded px-1 py-0.5 w-40 text-white font-mono focus:outline-none"
+                  />
+                  <button
+                    onClick={addCustomSnippet}
+                    className="text-xs bg-indigo-600 hover:bg-indigo-500 px-2 py-0.5 rounded text-white"
+                  >
+                    追加
+                  </button>
+                  <button onClick={() => setShowAddForm(false)} className="text-xs text-gray-500">✕</button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="text-xs bg-gray-600 hover:bg-gray-500 border border-gray-600 px-2 py-0.5 rounded text-gray-300"
+                >
+                  ＋ 新規登録
+                </button>
+              )}
+            </>
+          ) : (
+            items.map((item, i) => (
+              <button
+                key={i}
+                onClick={() => onInsert(item.snippet)}
+                title={item.title ?? item.snippet}
+                className="text-xs bg-gray-700 hover:bg-gray-600 border border-gray-600 px-1.5 py-0.5 rounded font-mono text-gray-200 cursor-pointer whitespace-nowrap"
+              >
+                {item.label}
+              </button>
+            ))
+          )}
         </div>
       )}
     </div>

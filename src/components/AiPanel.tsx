@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 
 type Provider = "anthropic" | "openai" | "gemini";
-type Action   = "explain" | "fix" | "generate" | "translate";
+type Action   = "explain" | "fix" | "generate" | "tikz" | "structure" | "translate";
 
 const PROVIDERS: { id: Provider; label: string; color: string }[] = [
   { id: "anthropic", label: "Claude",  color: "bg-orange-700" },
@@ -10,11 +10,13 @@ const PROVIDERS: { id: Provider; label: string; color: string }[] = [
   { id: "gemini",    label: "Gemini",  color: "bg-blue-700"   },
 ];
 
-const ACTIONS: { id: Action; label: string; group: "assist" | "translate" }[] = [
-  { id: "explain",   label: "ログを説明", group: "assist"    },
-  { id: "fix",       label: "修正を提案", group: "assist"    },
-  { id: "generate",  label: "LaTeX生成",  group: "assist"    },
-  { id: "translate", label: "翻訳",       group: "translate" },
+const ACTIONS: { id: Action; label: string; group: "assist" | "create" | "translate" }[] = [
+  { id: "explain",   label: "ログ説明",  group: "assist"    },
+  { id: "fix",       label: "修正提案",  group: "assist"    },
+  { id: "structure", label: "構成提案",  group: "assist"    },
+  { id: "generate",  label: "LaTeX生成", group: "create"    },
+  { id: "tikz",      label: "TikZ生成",  group: "create"    },
+  { id: "translate", label: "翻訳",      group: "translate" },
 ];
 
 const LANGUAGES: { id: string; label: string; flag: string }[] = [
@@ -27,6 +29,12 @@ const LANGUAGES: { id: string; label: string; flag: string }[] = [
 ];
 
 function storageKey(p: Provider) { return `texmate_${p}_key`; }
+
+const GROUP_COLORS: Record<string, string> = {
+  assist: "bg-purple-700",
+  create: "bg-indigo-700",
+  translate: "bg-teal-700",
+};
 
 interface Props {
   code: string;
@@ -64,7 +72,6 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
     setError("");
   }
 
-  // Prevent src === tgt
   function changeSrc(v: string) {
     setSrcLang(v);
     if (v === tgtLang) setTgtLang(LANGUAGES.find((l) => l.id !== v)!.id);
@@ -74,10 +81,12 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
     if (v === srcLang) setSrcLang(LANGUAGES.find((l) => l.id !== v)!.id);
   }
 
+  const needsPrompt = action === "generate" || action === "tikz";
   const canRun = hasKey && (
-    action === "explain" ||
-    action === "fix"     ||
-    (action === "generate"  && genPrompt.trim()) ||
+    action === "explain"   ||
+    action === "fix"       ||
+    action === "structure" ||
+    (needsPrompt        && genPrompt.trim()) ||
     (action === "translate" && code.trim())
   );
 
@@ -91,7 +100,9 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
     const body: Record<string, string> = { action };
     if (action === "explain")   { body.log = log; }
     if (action === "fix")       { body.code = code; body.log = log; }
+    if (action === "structure") { body.code = code; }
     if (action === "generate")  { body.prompt = genPrompt; }
+    if (action === "tikz")      { body.prompt = genPrompt; }
     if (action === "translate") { body.code = code; body.srcLang = srcLang; body.tgtLang = tgtLang; }
 
     const res = await fetch("/api/ai", {
@@ -109,22 +120,23 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
   }
 
   function extractCode(text: string): string | null {
-    const m = text.match(/```(?:latex)?\n([\s\S]*?)```/);
+    const m = text.match(/```(?:latex|tikz)?\n([\s\S]*?)```/);
     return m ? m[1].trim() : null;
   }
 
   const providerInfo = PROVIDERS.find((p) => p.id === provider)!;
   const srcFlag = LANGUAGES.find((l) => l.id === srcLang)?.flag ?? "";
   const tgtFlag = LANGUAGES.find((l) => l.id === tgtLang)?.flag ?? "";
+  const actionInfo = ACTIONS.find((a) => a.id === action)!;
 
   return (
-    <div className="shrink-0 h-60 border-t border-gray-700 bg-gray-900 flex flex-col overflow-hidden">
+    <div className="shrink-0 h-64 border-t border-gray-700 bg-gray-900 flex flex-col overflow-hidden">
 
       {/* Row 1: Provider tabs */}
       <div className="flex items-center gap-1 px-3 pt-1.5 pb-1 border-b border-gray-700/50 shrink-0">
         <span className="text-xs font-bold text-purple-400 mr-1">✦ AI</span>
         {PROVIDERS.map((p) => {
-          const hasK = !!localStorage.getItem(storageKey(p.id));
+          const hasK = typeof window !== "undefined" ? !!localStorage.getItem(storageKey(p.id)) : false;
           return (
             <button key={p.id} onClick={() => switchProvider(p.id)}
               className={`text-xs px-2 py-0.5 rounded transition-colors ${
@@ -144,12 +156,12 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
       </div>
 
       {/* Row 2: Action tabs + run button */}
-      <div className="flex items-center gap-1 px-3 py-1 border-b border-gray-700 shrink-0">
+      <div className="flex items-center gap-1 px-3 py-1 border-b border-gray-700 shrink-0 flex-wrap">
         {ACTIONS.map((a) => (
-          <button key={a.id} onClick={() => setAction(a.id)}
+          <button key={a.id} onClick={() => { setAction(a.id); setResult(""); setError(""); }}
             className={`text-xs px-2 py-0.5 rounded ${
               action === a.id
-                ? (a.group === "translate" ? "bg-teal-700 text-white" : "bg-purple-700 text-white")
+                ? `${GROUP_COLORS[a.group]} text-white`
                 : "bg-gray-700 text-gray-400 hover:bg-gray-600"
             }`}
           >
@@ -186,7 +198,7 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
         </button>
       </div>
 
-      {/* Translate info */}
+      {/* Translate / context info */}
       {action === "translate" && (
         <div className="px-3 py-1 bg-teal-900/20 border-b border-gray-700/50 shrink-0">
           <span className="text-xs text-teal-400">
@@ -194,13 +206,22 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
           </span>
         </div>
       )}
+      {action === "structure" && (
+        <div className="px-3 py-1 bg-purple-900/20 border-b border-gray-700/50 shrink-0">
+          <span className="text-xs text-purple-300">現在のLaTeXコードを分析して文書構成の改善案を提案します</span>
+        </div>
+      )}
 
-      {/* Generate prompt */}
-      {action === "generate" && (
+      {/* Prompt input for generate / TikZ */}
+      {needsPrompt && (
         <div className="px-3 py-1.5 border-b border-gray-700 shrink-0">
           <input value={genPrompt} onChange={(e) => setGenPrompt(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && run()}
-            placeholder="生成したいLaTeXの内容を説明（例：3×3 identity matrix, Gaussian integral）"
+            placeholder={
+              action === "tikz"
+                ? "TikZで描きたい図を説明（例：sin/cos graph, flowchart with 3 nodes）"
+                : "生成したいLaTeXの内容を説明（例：3×3 identity matrix, Gaussian integral）"
+            }
             className="w-full text-xs bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
           />
         </div>
@@ -214,7 +235,7 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
         {result && (
           <div className="space-y-2">
             <pre className="text-xs text-gray-200 whitespace-pre-wrap font-mono leading-relaxed">{result}</pre>
-            {(action === "generate" || action === "translate") && extractCode(result) && (
+            {(action === "generate" || action === "tikz" || action === "translate") && extractCode(result) && (
               <button
                 onClick={() => { const c = extractCode(result); if (c) onInsert(c); }}
                 className="text-xs bg-blue-600 hover:bg-blue-500 px-3 py-1 rounded text-white"
@@ -226,8 +247,13 @@ export default function AiPanel({ code, log, onInsert, onOpenSettings }: Props) 
         )}
         {!result && !error && !loading && (
           <div className="text-xs text-gray-600 text-center mt-3">
-            {hasKey ? "アクションを選択して ▶ 実行" : `${providerInfo.label} の APIキーを設定してください`}
+            {hasKey
+              ? `「${actionInfo.label}」を選択して ▶ 実行`
+              : `${providerInfo.label} の APIキーを設定してください`}
           </div>
+        )}
+        {loading && (
+          <div className="text-xs text-purple-400 text-center mt-3 animate-pulse">AI処理中...</div>
         )}
       </div>
     </div>

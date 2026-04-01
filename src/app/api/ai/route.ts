@@ -11,7 +11,7 @@ async function callAnthropic(apiKey: string, system: string, user: string): Prom
       "anthropic-version": "2023-06-01",
     },
     body: JSON.stringify({
-      model: "claude-opus-4-5",
+      model: "claude-opus-4-6",
       max_tokens: 4096,
       system,
       messages: [{ role: "user", content: user }],
@@ -108,7 +108,13 @@ const SYSTEM: Record<string, string> = {
   fix:
     "あなたはLaTeXの専門家です。提供されたLaTeXコードとエラーログを見て、具体的な修正案をコードブロック付きで日本語で提示してください。",
   generate:
-    "あなたはLaTeXの専門家です。提供された説明からLaTeXコードを生成してください。コードブロック（```latex ... ```）で囲んで返してください。",
+    "You are an expert LaTeX author. Generate clean, compilable LaTeX code based on the description. Wrap the result in a ```latex ... ``` code block. Add comments for clarity.",
+  tikz:
+    "You are an expert in LaTeX TikZ/PGF graphics. Generate a complete, compilable TikZ figure based on the description. Use \\begin{tikzpicture}...\\end{tikzpicture}. Include necessary \\usepackage{tikz} and any TikZ library imports. Wrap the result in a ```latex ... ``` code block.",
+  structure:
+    "あなたは学術論文・LaTeX文書の専門家です。提供されたLaTeXコードを分析し、文書の構成を改善するための提案を日本語で行ってください。以下の観点で提案してください：\n1. セクション構成の整合性\n2. 不足している要素（abstract, 参考文献, 図, 表など）\n3. 文書クラスに適した構成\n4. 改善案のLaTeXコードスニペット",
+  autocomplete:
+    "You are a LaTeX expert. Complete the LaTeX code at the cursor position. The user provides surrounding code context. Return ONLY the completion text (what comes immediately after the cursor), no explanation. Keep it concise.",
 };
 
 // ── Route handler ──────────────────────────────────────────────────────────
@@ -121,13 +127,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "APIキーが設定されていません" }, { status: 401 });
   }
 
-  const { action, log, code, prompt, srcLang, tgtLang } = await req.json() as {
+  const { action, log, code, prompt, srcLang, tgtLang, context, prefix } = await req.json() as {
     action: string;
     log?: string;
     code?: string;
     prompt?: string;
     srcLang?: string;
     tgtLang?: string;
+    context?: string;
+    prefix?: string;
   };
 
   let system = SYSTEM[action] ?? SYSTEM.explain;
@@ -139,9 +147,15 @@ export async function POST(req: NextRequest) {
     userContent = `LaTeXコード:\n\`\`\`latex\n${code ?? ""}\n\`\`\`\n\nエラーログ:\n\`\`\`\n${log ?? ""}\n\`\`\``;
   } else if (action === "generate") {
     userContent = prompt ?? "";
+  } else if (action === "tikz") {
+    userContent = `Generate TikZ code for: ${prompt ?? ""}`;
+  } else if (action === "structure") {
+    userContent = `以下のLaTeXコードを分析して構成提案をしてください:\n\`\`\`latex\n${code ?? ""}\n\`\`\``;
   } else if (action === "translate") {
     system      = buildTranslateSystem(srcLang ?? "ja", tgtLang ?? "en-us");
     userContent = `\`\`\`latex\n${code ?? ""}\n\`\`\``;
+  } else if (action === "autocomplete") {
+    userContent = `Context (before cursor):\n\`\`\`latex\n${context ?? ""}\n\`\`\`\n\nComplete starting from: ${prefix ?? ""}`;
   }
 
   try {

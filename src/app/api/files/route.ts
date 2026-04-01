@@ -21,7 +21,9 @@ export async function GET(req: NextRequest) {
     // List files in project
     const dir = path.join(PROJECTS_DIR, project);
     if (!fs.existsSync(dir)) return NextResponse.json({ error: "not found" }, { status: 404 });
-    const files = fs.readdirSync(dir).filter(f => f.endsWith(".tex") || f.endsWith(".bib") || f.endsWith(".sty"));
+    const files = fs.readdirSync(dir).filter(f =>
+      f.endsWith(".tex") || f.endsWith(".bib") || f.endsWith(".sty")
+    );
     return NextResponse.json({ files });
   }
 
@@ -36,5 +38,33 @@ export async function PUT(req: NextRequest) {
   if (!project || !file) return NextResponse.json({ error: "project and file required" }, { status: 400 });
   const filePath = safePath(project, file);
   fs.writeFileSync(filePath, content, "utf-8");
+  return NextResponse.json({ ok: true });
+}
+
+export async function POST(req: NextRequest) {
+  const { project, file } = await req.json();
+  if (!project || !file) return NextResponse.json({ error: "project and file required" }, { status: 400 });
+  if (!/^[a-zA-Z0-9_\-ぁ-んァ-ヶ\u4E00-\u9FFF][a-zA-Z0-9_\-ぁ-んァ-ヶ\u4E00-\u9FFF.]*\.(tex|bib|sty)$/.test(file)) {
+    return NextResponse.json({ error: "無効なファイル名" }, { status: 400 });
+  }
+  const filePath = safePath(project, file);
+  if (fs.existsSync(filePath)) return NextResponse.json({ error: "同名のファイルが存在します" }, { status: 409 });
+
+  // Default content based on extension
+  const ext = path.extname(file);
+  let content = "";
+  if (ext === ".tex") content = `% ${file}\n`;
+  else if (ext === ".bib") content = `% Bibliography file\n\n@article{key,\n  author = {Author Name},\n  title  = {Title},\n  journal = {Journal},\n  year   = {2024},\n}\n`;
+
+  fs.writeFileSync(filePath, content, "utf-8");
+  return NextResponse.json({ ok: true, file });
+}
+
+export async function DELETE(req: NextRequest) {
+  const { project, file } = await req.json();
+  if (!project || !file) return NextResponse.json({ error: "project and file required" }, { status: 400 });
+  const filePath = safePath(project, file);
+  if (!fs.existsSync(filePath)) return NextResponse.json({ error: "not found" }, { status: 404 });
+  fs.unlinkSync(filePath);
   return NextResponse.json({ ok: true });
 }

@@ -15,10 +15,17 @@ interface Props {
 }
 
 const TEMPLATES = [
-  { id: "basic", label: "基本" },
-  { id: "article", label: "論文" },
-  { id: "report", label: "レポート" },
-  { id: "beamer", label: "スライド" },
+  { id: "basic",          label: "🇯🇵 基本" },
+  { id: "article",        label: "🇯🇵 論文" },
+  { id: "report",         label: "🇯🇵 レポート" },
+  { id: "beamer",         label: "🇯🇵 スライド" },
+  { id: "article-en",     label: "🇺🇸 Article (US)" },
+  { id: "report-en",      label: "🇺🇸 Report (US)" },
+  { id: "beamer-en",      label: "🇺🇸 Beamer (US)" },
+  { id: "article-en-gb",  label: "🇬🇧 Article (UK)" },
+  { id: "article-de",     label: "🇩🇪 Artikel (DE)" },
+  { id: "article-fr",     label: "🇫🇷 Article (FR)" },
+  { id: "article-zh",     label: "🇨🇳 论文（中文）" },
 ];
 
 export default function ProjectSidebar({ projects, currentProject, onSelect, onRefresh, onInsertSnippet }: Props) {

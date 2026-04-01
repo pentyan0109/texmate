@@ -158,6 +158,277 @@ function getTemplate(template: string, title: string): string {
 \\end{document}
 `;
   }
+  if (template === "article-de") {
+    return `\\documentclass[a4paper,12pt]{article}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage[ngerman]{babel}
+\\usepackage{microtype}
+\\usepackage{amsmath,amssymb,amsthm}
+\\usepackage{graphicx}
+\\usepackage{booktabs}
+\\usepackage[hidelinks]{hyperref}
+
+\\title{${title}}
+\\author{Autor}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+\\begin{abstract}
+  Hier steht die Zusammenfassung.
+\\end{abstract}
+
+\\section{Einleitung}
+Hier beginnt die Einleitung.
+
+\\section{Methoden}
+Beschreibung der Methoden.
+
+\\section{Ergebnisse}
+\\begin{equation}
+  \\int_{-\\infty}^{\\infty} e^{-x^2}\\, dx = \\sqrt{\\pi}
+\\end{equation}
+
+\\section{Fazit}
+Zusammenfassung der Ergebnisse.
+
+\\end{document}
+`;
+  }
+  if (template === "article-fr") {
+    return `\\documentclass[a4paper,12pt]{article}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage[french]{babel}
+\\usepackage{microtype}
+\\usepackage{amsmath,amssymb,amsthm}
+\\usepackage{graphicx}
+\\usepackage{booktabs}
+\\usepackage[hidelinks]{hyperref}
+
+\\title{${title}}
+\\author{Auteur}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+\\begin{abstract}
+  Résumé de l'article.
+\\end{abstract}
+
+\\section{Introduction}
+Introduction ici.
+
+\\section{Méthodes}
+Description des méthodes.
+
+\\section{Résultats}
+\\begin{equation}
+  \\int_{-\\infty}^{\\infty} e^{-x^2}\\, dx = \\sqrt{\\pi}
+\\end{equation}
+
+\\section{Conclusion}
+Résumé des résultats.
+
+\\end{document}
+`;
+  }
+  if (template === "article-zh") {
+    return `\\documentclass[a4paper,12pt]{ctexart}
+\\usepackage{amsmath,amssymb,amsthm}
+\\usepackage{graphicx}
+\\usepackage{booktabs}
+\\usepackage[hidelinks]{hyperref}
+
+\\title{${title}}
+\\author{作者}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+
+\\begin{abstract}
+在此处写摘要。
+\\end{abstract}
+
+\\section{引言}
+在此处写引言。
+
+\\section{方法}
+描述研究方法。
+
+\\section{结果}
+\\begin{equation}
+  \\int_{-\\infty}^{\\infty} e^{-x^2}\\, dx = \\sqrt{\\pi}
+\\end{equation}
+
+\\section{结论}
+总结研究结论。
+
+\\end{document}
+`;
+  }
+  if (template === "article-en-gb") {
+    return `\\documentclass[a4paper,12pt]{article}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage[british]{babel}
+\\usepackage{microtype}
+\\usepackage{amsmath,amssymb,amsthm}
+\\usepackage{graphicx}
+\\usepackage{booktabs}
+\\usepackage[hidelinks]{hyperref}
+
+\\title{${title}}
+\\author{Author Name}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+\\begin{abstract}
+  Write your abstract here.
+\\end{abstract}
+
+\\section{Introduction}
+Write the introduction here.
+
+\\section{Methodology}
+Describe your methodology.
+
+\\section{Results}
+\\begin{equation}
+  \\int_{-\\infty}^{\\infty} e^{-x^2}\\, dx = \\sqrt{\\pi}
+\\end{equation}
+
+\\section{Conclusion}
+Summarise your findings.
+
+\\end{document}
+`;
+  }
+  if (template === "article-en") {
+    return `\\documentclass[letterpaper,12pt]{article}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage[american]{babel}
+\\usepackage{microtype}
+\\usepackage{amsmath,amssymb,amsthm}
+\\usepackage{graphicx}
+\\usepackage{booktabs}
+\\usepackage[hidelinks]{hyperref}
+
+\\title{${title}}
+\\author{Author Name}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+\\begin{abstract}
+  Write your abstract here.
+\\end{abstract}
+
+\\section{Introduction}
+Write the introduction here.
+
+\\section{Methods}
+Describe your methods.
+
+\\section{Results}
+Present your results.
+
+\\begin{equation}
+  \\int_{-\\infty}^{\\infty} e^{-x^2}\\, dx = \\sqrt{\\pi}
+\\end{equation}
+
+\\section{Conclusion}
+Summarize your findings.
+
+\\end{document}
+`;
+  }
+  if (template === "report-en") {
+    return `\\documentclass[letterpaper,12pt]{report}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage[american]{babel}
+\\usepackage{microtype}
+\\usepackage{amsmath,amssymb}
+\\usepackage{graphicx}
+\\usepackage{booktabs}
+\\usepackage[hidelinks]{hyperref}
+
+\\title{${title}}
+\\author{Author Name}
+\\date{\\today}
+
+\\begin{document}
+\\maketitle
+\\tableofcontents
+
+\\chapter{Introduction}
+Write the introduction here.
+
+\\chapter{Background}
+\\section{Related Work}
+Describe related work.
+
+\\chapter{Conclusion}
+Summarize your findings.
+
+\\end{document}
+`;
+  }
+  if (template === "beamer-en") {
+    return `\\documentclass{beamer}
+\\usepackage[T1]{fontenc}
+\\usepackage{lmodern}
+\\usepackage[american]{babel}
+\\usepackage{microtype}
+\\usepackage{amsmath,amssymb}
+\\usetheme{Madrid}
+\\usecolortheme{default}
+
+\\title{${title}}
+\\author{Presenter Name}
+\\institute{Institution}
+\\date{\\today}
+
+\\begin{document}
+
+\\begin{frame}
+  \\titlepage
+\\end{frame}
+
+\\begin{frame}{Outline}
+  \\tableofcontents
+\\end{frame}
+
+\\section{Introduction}
+\\begin{frame}{Introduction}
+  \\begin{itemize}
+    \\item Research background
+    \\item Motivation
+    \\item Contributions
+  \\end{itemize}
+\\end{frame}
+
+\\section{Methods}
+\\begin{frame}{Proposed Method}
+  Describe your method here.
+\\end{frame}
+
+\\section{Conclusion}
+\\begin{frame}{Conclusion}
+  \\begin{block}{Summary}
+    Write conclusions here.
+  \\end{block}
+\\end{frame}
+
+\\end{document}
+`;
+  }
+
   // basic / default
   return `\\documentclass[a4paper,12pt]{ltjsarticle}
 \\usepackage{luatexja}

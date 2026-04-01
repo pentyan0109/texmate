@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# TexMate: user project files
+/projects/
+
+# LaTeX temp files
+*.aux
+*.log
+*.dvi
+*.synctex.gz
+*._lineno_.*

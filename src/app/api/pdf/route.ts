@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-const PROJECTS_DIR = path.join(process.cwd(), "projects");
+const PROJECTS_DIR = process.env.PROJECTS_DIR ?? path.join(process.cwd(), "projects");
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);

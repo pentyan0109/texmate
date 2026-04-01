@@ -1,0 +1,32 @@
+# Fly.io configuration for TexMate
+app = "texmate"
+primary_region = "nrt"  # 東京リージョン
+
+[build]
+
+[env]
+  NODE_ENV    = "production"
+  LATEX_BIN_DIR = "/usr/bin"
+  PROJECTS_DIR  = "/data/projects"
+
+[http_service]
+  internal_port       = 3000
+  force_https         = true
+  auto_stop_machines  = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type       = "requests"
+    hard_limit = 10
+    soft_limit = 5
+
+[[vm]]
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[[mounts]]
+  source      = "texmate_projects"
+  destination = "/data/projects"
+  initial_size = "3gb"

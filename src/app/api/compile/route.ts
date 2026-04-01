@@ -5,7 +5,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 
 const execFileAsync = promisify(execFile);
-const PROJECTS_DIR = path.join(process.cwd(), "projects");
+const PROJECTS_DIR = process.env.PROJECTS_DIR ?? path.join(process.cwd(), "projects");
 // Windows: MiKTeX path, Linux: TeX Live (e.g. /usr/bin)
 const MIKTEX_BIN = process.env.LATEX_BIN_DIR ?? "C:\\Users\\penty\\AppData\\Local\\Programs\\MiKTeX\\miktex\\bin\\x64";
 

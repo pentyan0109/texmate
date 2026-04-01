@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-const PROJECTS_DIR = path.join(process.cwd(), "projects");
+const PROJECTS_DIR = process.env.PROJECTS_DIR ?? path.join(process.cwd(), "projects");
 const ALLOWED_EXTS = [".png", ".jpg", ".jpeg", ".pdf", ".eps"];
 
 export async function POST(req: NextRequest) {

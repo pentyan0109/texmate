@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
 
-const PROJECTS_DIR = path.join(process.cwd(), "projects");
+const PROJECTS_DIR = process.env.PROJECTS_DIR ?? path.join(process.cwd(), "projects");
 
 function safePath(project: string, file: string) {
   const base = path.join(PROJECTS_DIR, project);

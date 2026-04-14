@@ -29,8 +29,7 @@ export default function PdfViewer({ pdfUrl, compiling, project, file, onSyncClic
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pdfjsLib = await import("pdfjs-dist") as any;
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
     }
     return pdfjsLib;
   }, []);
